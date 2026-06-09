@@ -180,3 +180,17 @@ http://127.0.0.1:8000/docs
 ## Conclusión
 
 Durante el desarrollo de esta actividad se aplicaron conceptos relacionados con APIs REST, FastAPI, validación de datos con Pydantic y operaciones CRUD. Además, se fortalecieron habilidades en la organización del código, manejo de rutas y validación de información dentro de una aplicación backend.
+
+Segundo Trabajo del Project_Clients
+
+1. Se edito el Archivo conexion_bd.py conteniendo todas las listas necesarias para simular un BD dentro del proyecto.
+
+2. Se organizaron todos los endpoints correspondientes a clientes, facturasn y transacciones en sus debidos archivos.
+
+3. Se enlazaron el modulo enrutador con el archivo main.py.
+
+4. Se organizaron por tags los diferentes endpointsdel proyecto.
+
+5. Se creo el archivo requirements.txt junto con ls dependencias obligatorias para este proyecto.
+
+6. Se hicieron las pruebas necesarias para validar que el proyecto este funcionando de acuerdo con el objetivo.
