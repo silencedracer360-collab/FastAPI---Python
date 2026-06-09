@@ -2,7 +2,15 @@ from fastapi import APIRouter
 from app.conexion_bd import listas_clientes
 from app.model.cliente import *
 
-router = APIRouter()
+router = APIRouter(
+        prefix="/clientes",
+        tags=["Clientes"]
+)
+
+# ===================================
+# CRUD CLIENTES
+# ===================================
+
 
 @router.get("/")
 async def listar_cliente():
