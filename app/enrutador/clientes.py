@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from app.listas import listas_clientes
 from app.model.cliente import *
 from ..conexion_bd import Sesion_dependencia
@@ -22,12 +22,10 @@ async def listar_cliente(sesion: Sesion_dependencia):
 
 @router.get("/{id}", response_model=Cliente)
 async def listar_cliente_id(id: int, mi_sesion: Sesion_dependencia):
-
-    for cliente in listas_clientes:
-
-        if cliente.id == id:
-            return cliente
-    raise HTTPException(status_code=400, detail= f"El cliente con ID {cliente.id}, no existe.")
+    cliente_bd = mi_sesion.get(Cliente, id)
+    if not cliente_bd:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= f"El cliente con ID {id}, no existe.")
+    return cliente_bd
 
 @router.post("/", response_model=Cliente)
 async def crear_cliente(datos_cliente: ClienteCrear, mi_sesion: Sesion_dependencia):
@@ -42,46 +40,30 @@ async def crear_cliente(datos_cliente: ClienteCrear, mi_sesion: Sesion_dependenc
     return cliente_validado
 
 
-@router.put("/{id}")
+@router.patch("/{id}", response_model=Cliente)
 async def editar_cliente(
     id: int,
     datos_cliente: ClienteEditar,
     mi_sesion: Sesion_dependencia
 ):
+    cliente_bd = mi_sesion.get(Cliente, id)
 
-    for i, cliente in enumerate(listas_clientes):
+    if not cliente_bd:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= f"El cliente con ID {id}, no existe.")
+    cliente_dict = datos_cliente.model_dump(exclude_unset=True)
+    cliente_bd.sqlmodel_update(cliente_dict)
+    mi_sesion.add(cliente_bd)
+    mi_sesion.commit()
+    mi_sesion.refresh(cliente_bd)
+    return cliente_bd
 
-        if cliente.id == id:
+@router.delete("/{id}",  response_model= Cliente)
+async def eliminar_cliente(id: int ,mi_sesion: Sesion_dependencia):
 
-            cliente_val = Cliente.model_validate(
-                datos_cliente.model_dump()
-            )
+    cliente_bd = mi_sesion.get(Cliente, id)
 
-            cliente_val.id = id
-
-            listas_clientes[i] = cliente_val
-
-            return {
-                "mensaje": "Cliente actualizado",
-                "cliente": cliente_val
-            }
-
-    return {"error": "Cliente no encontrado"}
-
-
-@router.delete("/{id}")
-async def eliminar_cliente(id: int, mi_sesion: Sesion_dependencia):
-
-    for i, cliente in enumerate(listas_clientes):
-
-        if cliente.id == id:
-
-            nombre = cliente.nombre
-
-            del listas_clientes[i]
-
-            return {
-                "mensaje": f"Cliente {nombre} eliminado"
-            }
-
-    return {"error": "Cliente no encontrado"}
+    if not cliente_bd:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= f"El cliente con ID {id}, no existe.")
+    mi_sesion.delete(cliente_bd)
+    mi_sesion.commit()
+    return cliente_bd
