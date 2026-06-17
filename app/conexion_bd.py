@@ -1,11 +1,23 @@
-from app.model.cliente import *
-from app.model.transacciones import *
-from app.model.factura import *
+from sqlmodel import Session, SQLModel, create_engine
+from typing import Annotated
+from fastapi import FastAPI, Depends
 
-# ===================================
-# LISTAS SIMULANDO BASE DE DATOS
-# ===================================
+nombre_bd = "bd_clientes.sqlite3"
+url_bd = f"sqlite:///{nombre_bd}"
 
-listas_clientes: list[Cliente] = []
-listas_facturas: list[Factura] = []
-listas_transacciones: list[Transaccion] = []
+# motor de base de datos
+motor_bd = create_engine(url_bd)
+
+# Definir el metodo para crear las tablas
+def crear_tablas(app: FastAPI):
+    SQLModel.metadata.create_all(motor_bd)
+    yield #no hay nada para retornar o ejecutar
+
+# Definir el metodo para la sesión
+def obtener_sesion():
+    with Session(motor_bd) as mi_sesion:
+        yield mi_sesion #retorna la sesion
+        
+# Denominado inyección de dependencias
+# registrar la sesion como dependencia, utilizada en nuestros endpoints
+Sesion_dependencia = Annotated[Session, Depends(obtener_sesion)]

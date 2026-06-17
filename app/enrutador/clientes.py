@@ -1,6 +1,8 @@
-from fastapi import APIRouter
-from app.conexion_bd import listas_clientes
+from fastapi import APIRouter, HTTPException
+from app.listas import listas_clientes
 from app.model.cliente import *
+from ..conexion_bd import Sesion_dependencia
+from sqlmodel import select
 
 router = APIRouter(
         prefix="/clientes",
@@ -12,44 +14,39 @@ router = APIRouter(
 # ===================================
 
 
-@router.get("/")
-async def listar_cliente():
-
-    if len(listas_clientes) == 0:
-        return {"mensaje": "No hay clientes registrados"}
-
-    return listas_clientes
+@router.get("/", response_model=list[Cliente])
+async def listar_cliente(sesion: Sesion_dependencia):
+    list_cli = sesion.exec(select(Cliente)).all()
+    return list_cli
 
 
-@router.get("/{id}")
-async def listar_cliente_id(id: int):
+@router.get("/{id}", response_model=Cliente)
+async def listar_cliente_id(id: int, mi_sesion: Sesion_dependencia):
 
     for cliente in listas_clientes:
 
         if cliente.id == id:
             return cliente
-
-    return {"error": "Cliente no encontrado"}
-
+    raise HTTPException(status_code=400, detail= f"El cliente con ID {cliente.id}, no existe.")
 
 @router.post("/", response_model=Cliente)
-async def crear_cliente(datos_cliente: ClienteCrear):
+async def crear_cliente(datos_cliente: ClienteCrear, mi_sesion: Sesion_dependencia):
 
     cliente_validado = Cliente.model_validate(
         datos_cliente.model_dump()
     )
 
-    cliente_validado.id = len(listas_clientes) + 1
-
-    listas_clientes.append(cliente_validado)
-
+    mi_sesion.add(cliente_validado)
+    mi_sesion.commit()
+    mi_sesion.refresh(cliente_validado)
     return cliente_validado
 
 
 @router.put("/{id}")
 async def editar_cliente(
     id: int,
-    datos_cliente: ClienteEditar
+    datos_cliente: ClienteEditar,
+    mi_sesion: Sesion_dependencia
 ):
 
     for i, cliente in enumerate(listas_clientes):
@@ -73,7 +70,7 @@ async def editar_cliente(
 
 
 @router.delete("/{id}")
-async def eliminar_cliente(id: int):
+async def eliminar_cliente(id: int, mi_sesion: Sesion_dependencia):
 
     for i, cliente in enumerate(listas_clientes):
 
