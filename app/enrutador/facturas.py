@@ -14,7 +14,7 @@ router = APIRouter(
 # CRUD FACTURAS
 # ===================================
 
-@router.get("/", response_model=list[FacturaLeer])
+@router.get("/", response_model=list[FacturaLeerCompuesta])
 async def listar_facturas(session : Sesion_dependencia):
     # select * from facturas
     consulta = select(Factura)
