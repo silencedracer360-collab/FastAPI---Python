@@ -18,3 +18,8 @@ class ClienteEditar(ClienteBase):
 
 class Cliente(ClienteBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    #Relación virtual con factura   
+    factura : list["Factura"] = Relationship(back_populates="cliente")
+    
+class ClienteLeer(ClienteBase):
+    id : int
