@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from app.listas import listas_transacciones, listas_facturas
 from app.model.transacciones import *
+from app.model.factura import Factura
+from ..conexion_bd import Sesion_dependencia
+from sqlmodel import select
 
 router = APIRouter(
     prefix="/transacciones",
@@ -11,36 +13,25 @@ router = APIRouter(
 # CRUD TRANSACCIONES
 # ===================================
 
-@router.get("/transacciones")
-async def listar_transacciones():
+@router.get("/")
+async def listar_transacciones(session: Sesion_dependencia):
+    # consulta = select(Transaccion)
+    # lista_transacciones = session.exec(consulta).all()
+    # return lista_transacciones
+    return session.exec(select(Transaccion)).all()
 
-    return listas_transacciones
-
-
-@router.get("/transacciones/{id}")
+@router.get("/{id}")
 async def obtener_transaccion(id: int):
-
-    for transaccion in listas_transacciones:
-
-        if transaccion.id == id:
-            return transaccion
-
-    return {"error": "Transacción no encontrada"}
+    pass
 
 
-@router.post("/transacciones/{factura_id}")
-async def crear_transaccion(
-    factura_id: int,
-    datos_transaccion: TransaccionCrear
-):
+@router.post("/{factura_id}")
+async def crear_transaccion(factura_id: int, datos_transaccion: TransaccionCrear, session : Sesion_dependencia):
 
-    factura_encontrada = None
+    
+    factura_encontrada = session.get(Factura, factura_id)
 
-    for factura in listas_facturas:
-
-        if factura.id == factura_id:
-            factura_encontrada = factura
-            break
+    
 
     if not factura_encontrada:
 
@@ -49,19 +40,15 @@ async def crear_transaccion(
             detail="Factura no encontrada"
         )
 
-    transaccion_val = Transaccion.model_validate(
-        datos_transaccion.model_dump()
-    )
+    #Validar datos de la transacción -json y pasamos a dict
+    transaccion_dict = datos_transaccion.model_dump()
+    transaccion_dict["factura_id"] = factura_id
+    transaccion_val = Transaccion.model_validate(transaccion_dict)
 
-    transaccion_val.id = len(listas_transacciones) + 1
-    transaccion_val.factura_id = factura_id
-
-    listas_transacciones.append(transaccion_val)
-
-    factura_encontrada.transacciones.append(
-        transaccion_val
-    )
-
+    #Guardar en BD
+    session.add(transaccion_val)
+    session.commit()
+    session.refresh(transaccion_val)
     return {
         "mensaje": "Transacción creada",
         "transaccion": transaccion_val
