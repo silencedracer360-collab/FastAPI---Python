@@ -7,8 +7,23 @@ from app.model.transacciones import Transaccion
 
 class FacturaBase(SQLModel):
     fecha: str = Field(default=datetime.now())
-    # cliente: Cliente
-    # transacciones: list[Transaccion] = []
+
+
+
+class CrearFactura(FacturaBase):
+    pass
+
+
+class EditarFactura(FacturaBase):
+    pass
+
+
+class Factura(FacturaBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    cliente_id: int = Field(default=None, foreign_key="cliente.id")
+    #Crear relaciones virtuales CLiente, Transacciones - No en la BD
+    cliente : Cliente = Relationship(back_populates="factura")
+    transacciones : list[Transaccion] = Relationship(back_populates="factura")
 
     @computed_field
     @property
@@ -19,25 +34,15 @@ class FacturaBase(SQLModel):
         for transaccion in self.transacciones:
             total_factura += transaccion.vr_unitario * transaccion.cantidad
         return total_factura
-class CrearFactura(FacturaBase):
-    pass
 
-
-class EditarFactura(FacturaBase):
-    pass
-
-
-class Factura(FacturaBase, table=True   ):
-    id: int | None = Field(default=None, primary_key=True)
-    cliente_id: int = Field(default=None, foreign_key="cliente.id")
-    #Crear relaciones virtuales CLiente, Transacciones - No en la BD
-    cliente : Cliente = Relationship(back_populates="factura")
-    transacciones : list[Transaccion] = Relationship(back_populates="factura")
     
 #Modelo para mostrar al CLiente o Usuario
 class FacturaLeer(FacturaBase):
     id : int
     cliente : ClienteLeer
+    valor_total : float
     
 class FacturaLeerCompuesta(FacturaLeer):
-        transacciones : list[Transaccion] = []
+    transacciones : list[Transaccion] = []
+
+        
